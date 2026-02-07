@@ -12,30 +12,25 @@ body {
 /* HEADER */
 header {
   text-align: center;
-  padding: 20px;
+  padding: 16px;
   background: #020617;
 }
 
-header h1 {
-  margin: 0;
-  font-size: 26px;
-}
-
-/* CONTROLS */
-.controls {
+/* INPUTS */
+.inputs {
   display: flex;
   gap: 10px;
   padding: 10px;
 }
 
-.controls input {
+.inputs input {
   flex: 1;
   padding: 10px;
   border-radius: 6px;
   border: none;
 }
 
-.controls button {
+.inputs button {
   padding: 10px;
   border-radius: 6px;
   border: none;
@@ -43,14 +38,15 @@ header h1 {
   font-weight: bold;
 }
 
-/* MAIN */
-main {
-  padding: 10px;
+/* TITULOS */
+.titulo {
+  margin: 16px 10px 8px;
 }
 
-.area {
+.container {
   display: flex;
   gap: 10px;
+  padding: 10px;
   overflow-x: auto;
 }
 
@@ -60,6 +56,12 @@ main {
   border-radius: 10px;
   padding: 10px;
   min-width: 220px;
+}
+
+.time h3 {
+  margin: 0 0 8px 0;
+  display: flex;
+  justify-content: space-between;
 }
 
 /* LISTA */
@@ -75,12 +77,18 @@ main {
   margin-bottom: 6px;
 }
 
-/* SELECIONADO (MOBILE) */
-.jogador.selecionado {
-  outline: 2px solid #22c55e;
+/* SOBRANDO */
+.sobrando-box {
+  padding: 10px;
 }
 
-/* MOBILE */
+/* MOBILE FIX — SEM CONFLITO */
+.jogador,
+.time {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 @media (pointer: coarse) {
   .jogador {
     cursor: pointer;

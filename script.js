@@ -3,8 +3,8 @@ let estado = JSON.parse(localStorage.getItem("pelada")) || {
   sobrando: []
 };
 
-let jogadorSelecionado = null;
 const isMobile = window.matchMedia("(pointer: coarse)").matches;
+let jogadorSelecionado = null;
 
 function salvar() {
   localStorage.setItem("pelada", JSON.stringify(estado));
@@ -55,25 +55,24 @@ function criarJogador(nome) {
 }
 
 function selecionarJogador(nome, el) {
-  document.querySelectorAll(".jogador").forEach(j =>
-    j.classList.remove("selecionado")
-  );
+  document.querySelectorAll(".jogador")
+    .forEach(j => j.classList.remove("ativo"));
 
   jogadorSelecionado = nome;
-  el.classList.add("selecionado");
+  el.classList.add("ativo");
 }
 
 /* -------- MOVE -------- */
 
-function moverJogador(nome, destino) {
+function moverJogador(nome, timeDestino) {
   estado.sobrando = estado.sobrando.filter(j => j !== nome);
   estado.times.forEach(t => {
     t.jogadores = t.jogadores.filter(j => j !== nome);
   });
 
-  if (destino) {
-    if (destino.jogadores.length < 5) {
-      destino.jogadores.push(nome);
+  if (timeDestino) {
+    if (timeDestino.jogadores.length < 5) {
+      timeDestino.jogadores.push(nome);
     } else {
       estado.sobrando.push(nome);
     }
@@ -91,14 +90,16 @@ function renderizar() {
   const proxima = document.getElementById("proxima");
   const sobrando = document.getElementById("sobrando");
 
-  jogando.innerHTML = proxima.innerHTML = sobrando.innerHTML = "";
+  jogando.innerHTML = "";
+  proxima.innerHTML = "";
+  sobrando.innerHTML = "";
 
   estado.times.forEach(time => {
     const card = document.createElement("div");
     card.className = "time";
 
     card.innerHTML = `
-      <h3>${time.nome} (${time.jogadores.length}/5)</h3>
+      <h3>${time.nome} <span>${time.jogadores.length}/5</span></h3>
       <div class="lista"></div>
     `;
 
@@ -111,8 +112,7 @@ function renderizar() {
     if (!isMobile) {
       lista.ondragover = e => e.preventDefault();
       lista.ondrop = e => {
-        const jogador = e.dataTransfer.getData("jogador");
-        moverJogador(jogador, time);
+        moverJogador(e.dataTransfer.getData("jogador"), time);
         renderizar();
       };
     } else {
@@ -135,8 +135,7 @@ function renderizar() {
   if (!isMobile) {
     sobrando.ondragover = e => e.preventDefault();
     sobrando.ondrop = e => {
-      const jogador = e.dataTransfer.getData("jogador");
-      moverJogador(jogador, null);
+      moverJogador(e.dataTransfer.getData("jogador"), null);
       renderizar();
     };
   } else {
