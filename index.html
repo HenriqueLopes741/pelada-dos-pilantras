@@ -1,43 +1,44 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Pelada dos Pilantras</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-<header>
-  <h1>⚽ Pelada dos Pilantras</h1>
-  <p>Organização da resenha</p>
-</header>
+  <header>
+    <h1>⚽ Pelada dos Pilantras</h1>
+    <p>Arraste jogadores, monte times e organize a resenha</p>
+  </header>
 
-<section class="inputs">
-  <input id="nomeJogador" placeholder="Nome do jogador">
-  <button onclick="adicionarJogador()">+ Jogador</button>
-</section>
+  <section class="controls">
+    <input id="nomeJogador" placeholder="Nome do jogador">
+    <button onclick="adicionarJogador()">Adicionar jogador</button>
+  </section>
 
-<section class="inputs">
-  <input id="nomeTime" placeholder="Nome do time">
-  <button onclick="adicionarTime()">+ Time</button>
-</section>
+  <section class="controls">
+    <input id="nomeTime" placeholder="Nome do time">
+    <button onclick="adicionarTime()">Adicionar time</button>
+  </section>
 
-<section>
-  <h2 class="titulo jogando">🟢 Jogando agora</h2>
-  <div class="container dropzone area-jogando" id="jogando"></div>
-</section>
+  <main>
+    <h2>🟢 Jogando agora</h2>
+    <div class="area dropzone" id="jogando"></div>
 
-<section>
-  <h2 class="titulo proxima">🔵 De próxima</h2>
-  <div class="container dropzone area-proxima" id="proxima"></div>
-</section>
+    <h2>🔵 De próxima</h2>
+    <div class="area dropzone" id="proxima"></div>
 
-<section class="sobrando-box">
-  <h2 class="titulo sobrando">🟡 Sobrando</h2>
-  <div class="lista dropzone" id="sobrando"></div>
-</section>
+    <h2>🟡 Sobrando</h2>
+    <div class="area dropzone sobrando" id="sobrando"></div>
+  </main>
 
-<script src="script.js"></script>
+  <footer>
+    <p>Feito pra pelada ⚽🔥</p>
+  </footer>
+
+  <script src="script.js"></script>
 </body>
 </html>
