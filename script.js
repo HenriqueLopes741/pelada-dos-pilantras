@@ -35,6 +35,7 @@ function criarJogador(nome) {
     e.dataTransfer.setData("jogador", nome);
   });
 
+  // mobile
   div.addEventListener("touchend", e => {
     const t = e.changedTouches[0];
     const alvo = document.elementFromPoint(t.clientX, t.clientY);
@@ -65,12 +66,20 @@ function renderizar() {
   estado.times.forEach(time => {
     const card = document.createElement("div");
     card.className = "time";
+    card.draggable = true;
+
     if (time.destaque) card.classList.add("vencedor");
 
     card.innerHTML = `
       <h2>${time.nome} <span>${time.vitorias || 0} 🏆</span></h2>
       <div class="lista dropzone" data-time="${time.nome}"></div>
     `;
+
+    // 🔥 DRAG DO TIME (ESSENCIAL)
+    card.addEventListener("dragstart", e => {
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", time.nome);
+    });
 
     const lista = card.querySelector(".lista");
     time.jogadores.forEach(j => lista.appendChild(criarJogador(j)));
@@ -83,7 +92,61 @@ function renderizar() {
   });
 
   atualizarRanking();
+  ativarDropzones(); // 🔥 NÃO ESQUECER
   salvar();
+}
+
+/* DROPZONES */
+function ativarDropzones() {
+
+  // jogadores → times
+  document.querySelectorAll(".lista").forEach(zone => {
+    zone.ondragover = e => e.preventDefault();
+
+    zone.ondrop = e => {
+      e.preventDefault();
+      const nome = e.dataTransfer.getData("jogador");
+      if (!nome) return;
+
+      removerJogador(nome, false);
+
+      const time = estado.times.find(t => t.nome === zone.dataset.time);
+      if (time && time.jogadores.length < 5) {
+        time.jogadores.push(nome);
+      } else {
+        estado.sobrando.push(nome);
+      }
+
+      renderizar();
+    };
+  });
+
+  // 🔥 TIMES → jogando / proxima
+  ["jogando","proxima"].forEach(id => {
+    const area = document.getElementById(id);
+
+    area.ondragover = e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+    };
+
+    area.ondrop = e => {
+      e.preventDefault();
+      const nome = e.dataTransfer.getData("text/plain");
+      if (!nome) return;
+
+      const time = estado.times.find(t => t.nome === nome);
+      if (!time) return;
+
+      time.status = id;
+
+      // manda pro final da fila
+      estado.times = estado.times.filter(t => t.nome !== nome);
+      estado.times.push(time);
+
+      renderizar();
+    };
+  });
 }
 
 /* RESULTADOS */
@@ -151,8 +214,7 @@ function iniciarTimer() {
     if (tempo <= 0) {
       pausarTimer();
       tocarSomFim();
-}
-
+    }
   },1000);
 }
 function pausarTimer() {
@@ -180,7 +242,12 @@ function adicionarJogador() {
 
 function adicionarTime() {
   if (!nomeTime.value) return;
-  estado.times.push({ nome:nomeTime.value, jogadores:[], status:"proxima", vitorias:0 });
+  estado.times.push({
+    nome:nomeTime.value,
+    jogadores:[],
+    status:"proxima",
+    vitorias:0
+  });
   nomeTime.value = "";
   renderizar();
 }
@@ -210,9 +277,9 @@ function gerarPrintRanking() {
 
 function tocarSomFim() {
   const audio = document.getElementById("somFim");
+  if (!audio) return;
   audio.currentTime = 0;
   audio.play();
 }
-
 
 renderizar();
