@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pelada dos Pilantras</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <h1>⚽ Pelada dos Pilantras</h1>
+  <p>Organização da resenha</p>
+</header>
+
+<section class="inputs">
+  <input id="nomeJogador" placeholder="Nome do jogador">
+  <button onclick="adicionarJogador()">+ Jogador</button>
+</section>
+
+<section class="inputs">
+  <input id="nomeTime" placeholder="Nome do time">
+  <button onclick="adicionarTime()">+ Time</button>
+</section>
+
+<section>
+  <h2 class="titulo jogando">🟢 Jogando agora</h2>
+  <div class="container dropzone area-jogando" id="jogando"></div>
+</section>
+
+<section>
+  <h2 class="titulo proxima">🔵 De próxima</h2>
+  <div class="container dropzone area-proxima" id="proxima"></div>
+</section>
+
+<section class="sobrando-box">
+  <h2 class="titulo sobrando">🟡 Sobrando</h2>
+  <div class="lista dropzone" id="sobrando"></div>
+</section>
+
+<script src="script.js"></script>
+</body>
+</html>
