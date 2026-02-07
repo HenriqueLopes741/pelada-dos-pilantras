@@ -5,39 +5,59 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pelada dos Pilantras</title>
   <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 </head>
 <body>
 
-<header>
-  <h1>⚽ Pelada dos Pilantras</h1>
-  <p>Organização da resenha</p>
-</header>
+<h1>⚽ Pelada dos Pilantras</h1>
 
-<section class="inputs">
+<div class="topo">
   <input id="nomeJogador" placeholder="Nome do jogador">
-  <button onclick="adicionarJogador()">+ Jogador</button>
-</section>
+  <button onclick="adicionarJogador()">Adicionar jogador</button>
+</div>
 
-<section class="inputs">
+<div class="topo">
   <input id="nomeTime" placeholder="Nome do time">
-  <button onclick="adicionarTime()">+ Time</button>
-</section>
+  <button onclick="adicionarTime()">Adicionar time</button>
+</div>
 
-<section>
-  <h2 class="titulo jogando">🟢 Jogando agora</h2>
-  <div class="container dropzone area-jogando" id="jogando"></div>
-</section>
+<div class="topo">
+  <button onclick="timeGanhou()">🏆 Time ganhou</button>
+  <button onclick="empate()" style="background:#3b82f6;color:white">🤝 Empate</button>
+  <button onclick="resetarTudo()" style="background:#ef4444;color:white">🔄 Resetar</button>
+</div>
 
-<section>
-  <h2 class="titulo proxima">🔵 De próxima</h2>
-  <div class="container dropzone area-proxima" id="proxima"></div>
-</section>
+<div class="topo">
+  <button class="toggle-tema" onclick="alternarTema()">🌗 Modo Claro / Escuro</button>
+</div>
 
-<section class="sobrando-box">
-  <h2 class="titulo sobrando">🟡 Sobrando</h2>
-  <div class="lista dropzone" id="sobrando"></div>
-</section>
+<button class="btn-print" onclick="gerarPrintRanking()">📸 Print Ranking</button>
+
+<div class="cronometro">
+  <span id="tempo">10:00</span>
+  <button onclick="iniciarTimer()">▶</button>
+  <button onclick="pausarTimer()">⏸</button>
+  <button onclick="resetarTimer()">⏹</button>
+</div>
+
+<h2>🟢 Jogando agora</h2>
+<div class="container dropzone" id="jogando"></div>
+
+<h2>🔵 De próxima</h2>
+<div class="container dropzone" id="proxima"></div>
+
+<h2>🟡 Sobrando</h2>
+<div class="lista dropzone" id="sobrando"></div>
+
+<h2>🏆 Ranking</h2>
+<div id="ranking"></div>
 
 <script src="script.js"></script>
+
+<audio id="somFim" preload="auto">
+  <source src="https://actions.google.com/sounds/v1/alarms/buzzer.ogg" type="audio/ogg">
+  <source src="https://actions.google.com/sounds/v1/alarms/buzzer.mp3" type="audio/mpeg">
+</audio>
+
 </body>
 </html>

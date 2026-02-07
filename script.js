@@ -3,151 +3,216 @@ let estado = JSON.parse(localStorage.getItem("pelada")) || {
   sobrando: []
 };
 
-const isMobile = window.matchMedia("(pointer: coarse)").matches;
-let jogadorSelecionado = null;
+let tempo = 600;
+let intervalo = null;
 
+/* TEMA */
+if (localStorage.getItem("tema") === "light") {
+  document.body.classList.add("light");
+}
+
+function alternarTema() {
+  document.body.classList.toggle("light");
+  localStorage.setItem(
+    "tema",
+    document.body.classList.contains("light") ? "light" : "dark"
+  );
+}
+
+/* SALVAR */
 function salvar() {
   localStorage.setItem("pelada", JSON.stringify(estado));
 }
 
-/* -------- ADD -------- */
-
-function adicionarJogador() {
-  const input = document.getElementById("nomeJogador");
-  if (!input.value.trim()) return;
-
-  estado.sobrando.push(input.value.trim());
-  input.value = "";
-  renderizar();
-}
-
-function adicionarTime() {
-  const input = document.getElementById("nomeTime");
-  if (!input.value.trim()) return;
-
-  estado.times.push({
-    nome: input.value.trim(),
-    jogadores: [],
-    status: "proxima"
-  });
-
-  input.value = "";
-  renderizar();
-}
-
-/* -------- JOGADOR -------- */
-
+/* JOGADOR */
 function criarJogador(nome) {
   const div = document.createElement("div");
   div.className = "jogador";
-  div.textContent = nome;
+  div.draggable = true;
+  div.innerHTML = `${nome}<button onclick="removerJogador('${nome}')">×</button>`;
 
-  if (!isMobile) {
-    div.draggable = true;
-    div.ondragstart = e => {
-      e.dataTransfer.setData("jogador", nome);
-    };
-  } else {
-    div.onclick = () => selecionarJogador(nome, div);
-  }
+  div.addEventListener("dragstart", e => {
+    e.dataTransfer.setData("jogador", nome);
+  });
+
+  div.addEventListener("touchend", e => {
+    const t = e.changedTouches[0];
+    const alvo = document.elementFromPoint(t.clientX, t.clientY);
+    const zone = alvo?.closest(".lista");
+    if (!zone) return;
+
+    removerJogador(nome, false);
+
+    if (zone.dataset.time) {
+      const time = estado.times.find(t => t.nome === zone.dataset.time);
+      time.jogadores.length < 5
+        ? time.jogadores.push(nome)
+        : estado.sobrando.push(nome);
+    } else estado.sobrando.push(nome);
+
+    renderizar();
+  });
 
   return div;
 }
 
-function selecionarJogador(nome, el) {
-  document.querySelectorAll(".jogador")
-    .forEach(j => j.classList.remove("ativo"));
-
-  jogadorSelecionado = nome;
-  el.classList.add("ativo");
-}
-
-/* -------- MOVE -------- */
-
-function moverJogador(nome, timeDestino) {
-  estado.sobrando = estado.sobrando.filter(j => j !== nome);
-  estado.times.forEach(t => {
-    t.jogadores = t.jogadores.filter(j => j !== nome);
-  });
-
-  if (timeDestino) {
-    if (timeDestino.jogadores.length < 5) {
-      timeDestino.jogadores.push(nome);
-    } else {
-      estado.sobrando.push(nome);
-    }
-  } else {
-    estado.sobrando.push(nome);
-  }
-
-  jogadorSelecionado = null;
-}
-
-/* -------- RENDER -------- */
-
+/* RENDER */
 function renderizar() {
-  const jogando = document.getElementById("jogando");
-  const proxima = document.getElementById("proxima");
-  const sobrando = document.getElementById("sobrando");
-
-  jogando.innerHTML = "";
-  proxima.innerHTML = "";
-  sobrando.innerHTML = "";
+  ["jogando","proxima","sobrando","ranking"].forEach(id => {
+    document.getElementById(id).innerHTML = "";
+  });
 
   estado.times.forEach(time => {
     const card = document.createElement("div");
     card.className = "time";
+    if (time.destaque) card.classList.add("vencedor");
 
     card.innerHTML = `
-      <h3>${time.nome} <span>${time.jogadores.length}/5</span></h3>
-      <div class="lista"></div>
+      <h2>${time.nome} <span>${time.vitorias || 0} 🏆</span></h2>
+      <div class="lista dropzone" data-time="${time.nome}"></div>
     `;
 
     const lista = card.querySelector(".lista");
+    time.jogadores.forEach(j => lista.appendChild(criarJogador(j)));
 
-    time.jogadores.forEach(j =>
-      lista.appendChild(criarJogador(j))
-    );
-
-    if (!isMobile) {
-      lista.ondragover = e => e.preventDefault();
-      lista.ondrop = e => {
-        moverJogador(e.dataTransfer.getData("jogador"), time);
-        renderizar();
-      };
-    } else {
-      lista.onclick = () => {
-        if (jogadorSelecionado) {
-          moverJogador(jogadorSelecionado, time);
-          renderizar();
-        }
-      };
-    }
-
-    (time.status === "jogando" ? jogando : proxima)
-      .appendChild(card);
+    document.getElementById(time.status).appendChild(card);
   });
 
-  estado.sobrando.forEach(j =>
-    sobrando.appendChild(criarJogador(j))
-  );
+  estado.sobrando.forEach(j => {
+    document.getElementById("sobrando").appendChild(criarJogador(j));
+  });
 
-  if (!isMobile) {
-    sobrando.ondragover = e => e.preventDefault();
-    sobrando.ondrop = e => {
-      moverJogador(e.dataTransfer.getData("jogador"), null);
-      renderizar();
-    };
-  } else {
-    sobrando.onclick = () => {
-      if (jogadorSelecionado) {
-        moverJogador(jogadorSelecionado, null);
-        renderizar();
-      }
-    };
-  }
-
+  atualizarRanking();
   salvar();
 }
+
+/* RESULTADOS */
+function timeGanhou() {
+  const jogando = estado.times.filter(t => t.status === "jogando");
+  if (jogando.length !== 2) return alert("Devem existir 2 times jogando");
+
+  const escolha = prompt(
+    jogando.map((t,i)=>`${i+1} - ${t.nome}`).join("\n")
+  );
+  const vencedor = jogando[parseInt(escolha)-1];
+  if (!vencedor) return;
+
+  const perdedor = jogando.find(t => t !== vencedor);
+
+  estado.times.forEach(t => delete t.destaque);
+
+  vencedor.vitorias = (vencedor.vitorias || 0) + 1;
+  vencedor.destaque = true;
+
+  perdedor.status = "proxima";
+
+  const proximo = estado.times.find(
+    t => t.status === "proxima" && t !== perdedor
+  );
+  if (proximo) proximo.status = "jogando";
+
+  resetarTimer();
+  renderizar();
+}
+
+function empate() {
+  const jogando = estado.times.filter(t => t.status === "jogando");
+  const proximos = estado.times.filter(t => t.status === "proxima");
+
+  if (proximos.length < jogando.length)
+    return alert("Times insuficientes");
+
+  estado.times.forEach(t => delete t.destaque);
+  jogando.forEach(t => t.destaque = true);
+
+  jogando.forEach(t => t.status = "proxima");
+  proximos.slice(0,2).forEach(t => t.status = "jogando");
+
+  resetarTimer();
+  renderizar();
+}
+
+/* RANKING */
+function atualizarRanking() {
+  const rank = document.getElementById("ranking");
+  [...estado.times]
+    .sort((a,b)=>(b.vitorias||0)-(a.vitorias||0))
+    .forEach(t => {
+      rank.innerHTML += `<div>${t.nome}: ${t.vitorias||0} 🏆</div>`;
+    });
+}
+
+/* TIMER */
+function iniciarTimer() {
+  if (intervalo) return;
+  intervalo = setInterval(() => {
+    tempo--;
+    atualizarTempo();
+    if (tempo <= 0) {
+      pausarTimer();
+      tocarSomFim();
+}
+
+  },1000);
+}
+function pausarTimer() {
+  clearInterval(intervalo);
+  intervalo = null;
+}
+function resetarTimer() {
+  pausarTimer();
+  tempo = 600;
+  atualizarTempo();
+}
+function atualizarTempo() {
+  document.getElementById("tempo").innerText =
+    String(Math.floor(tempo/60)).padStart(2,"0") + ":" +
+    String(tempo%60).padStart(2,"0");
+}
+
+/* OUTROS */
+function adicionarJogador() {
+  if (!nomeJogador.value) return;
+  estado.sobrando.push(nomeJogador.value);
+  nomeJogador.value = "";
+  renderizar();
+}
+
+function adicionarTime() {
+  if (!nomeTime.value) return;
+  estado.times.push({ nome:nomeTime.value, jogadores:[], status:"proxima", vitorias:0 });
+  nomeTime.value = "";
+  renderizar();
+}
+
+function removerJogador(n) {
+  estado.sobrando = estado.sobrando.filter(j => j !== n);
+  estado.times.forEach(t => t.jogadores = t.jogadores.filter(j => j !== n));
+  renderizar();
+}
+
+function resetarTudo() {
+  if (!confirm("Resetar tudo?")) return;
+  estado = { times:[], sobrando:[] };
+  localStorage.clear();
+  resetarTimer();
+  renderizar();
+}
+
+function gerarPrintRanking() {
+  html2canvas(document.getElementById("ranking")).then(c => {
+    const a = document.createElement("a");
+    a.download = "ranking.png";
+    a.href = c.toDataURL();
+    a.click();
+  });
+}
+
+function tocarSomFim() {
+  const audio = document.getElementById("somFim");
+  audio.currentTime = 0;
+  audio.play();
+}
+
 
 renderizar();
