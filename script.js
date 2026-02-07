@@ -3,27 +3,30 @@ let estado = JSON.parse(localStorage.getItem("pelada")) || {
   sobrando: []
 };
 
+let jogadorSelecionado = null;
+const isMobile = window.matchMedia("(pointer: coarse)").matches;
+
 function salvar() {
   localStorage.setItem("pelada", JSON.stringify(estado));
 }
 
+/* -------- ADD -------- */
+
 function adicionarJogador() {
   const input = document.getElementById("nomeJogador");
-  const nome = input.value.trim();
-  if (!nome) return;
+  if (!input.value.trim()) return;
 
-  estado.sobrando.push(nome);
+  estado.sobrando.push(input.value.trim());
   input.value = "";
   renderizar();
 }
 
 function adicionarTime() {
   const input = document.getElementById("nomeTime");
-  const nome = input.value.trim();
-  if (!nome) return;
+  if (!input.value.trim()) return;
 
   estado.times.push({
-    nome,
+    nome: input.value.trim(),
     jogadores: [],
     status: "proxima"
   });
@@ -32,53 +35,71 @@ function adicionarTime() {
   renderizar();
 }
 
+/* -------- JOGADOR -------- */
+
 function criarJogador(nome) {
   const div = document.createElement("div");
   div.className = "jogador";
   div.textContent = nome;
-  div.draggable = true;
 
-  // Corrige problema de seleção no mobile
-  div.addEventListener("touchstart", e => {
-    e.preventDefault();
-  }, { passive: false });
-
-  div.addEventListener("dragstart", e => {
-    e.dataTransfer.setData("jogador", nome);
-  });
+  if (!isMobile) {
+    div.draggable = true;
+    div.ondragstart = e => {
+      e.dataTransfer.setData("jogador", nome);
+    };
+  } else {
+    div.onclick = () => selecionarJogador(nome, div);
+  }
 
   return div;
 }
 
-function renomearTime(antigo, novo) {
-  const time = estado.times.find(t => t.nome === antigo);
-  if (time) time.nome = novo;
-  renderizar();
+function selecionarJogador(nome, el) {
+  document.querySelectorAll(".jogador").forEach(j =>
+    j.classList.remove("selecionado")
+  );
+
+  jogadorSelecionado = nome;
+  el.classList.add("selecionado");
 }
+
+/* -------- MOVE -------- */
+
+function moverJogador(nome, destino) {
+  estado.sobrando = estado.sobrando.filter(j => j !== nome);
+  estado.times.forEach(t => {
+    t.jogadores = t.jogadores.filter(j => j !== nome);
+  });
+
+  if (destino) {
+    if (destino.jogadores.length < 5) {
+      destino.jogadores.push(nome);
+    } else {
+      estado.sobrando.push(nome);
+    }
+  } else {
+    estado.sobrando.push(nome);
+  }
+
+  jogadorSelecionado = null;
+}
+
+/* -------- RENDER -------- */
 
 function renderizar() {
   const jogando = document.getElementById("jogando");
   const proxima = document.getElementById("proxima");
   const sobrando = document.getElementById("sobrando");
 
-  jogando.innerHTML = "";
-  proxima.innerHTML = "";
-  sobrando.innerHTML = "";
+  jogando.innerHTML = proxima.innerHTML = sobrando.innerHTML = "";
 
   estado.times.forEach(time => {
     const card = document.createElement("div");
     card.className = "time";
-    card.draggable = true;
 
     card.innerHTML = `
-      <h3>
-        <span contenteditable="true"
-          onblur="renomearTime('${time.nome}', this.innerText)">
-          ${time.nome}
-        </span>
-        <span>${time.jogadores.length}/5</span>
-      </h3>
-      <div class="lista dropzone" data-time="${time.nome}"></div>
+      <h3>${time.nome} (${time.jogadores.length}/5)</h3>
+      <div class="lista"></div>
     `;
 
     const lista = card.querySelector(".lista");
@@ -87,9 +108,21 @@ function renderizar() {
       lista.appendChild(criarJogador(j))
     );
 
-    card.addEventListener("dragstart", e => {
-      e.dataTransfer.setData("time", time.nome);
-    });
+    if (!isMobile) {
+      lista.ondragover = e => e.preventDefault();
+      lista.ondrop = e => {
+        const jogador = e.dataTransfer.getData("jogador");
+        moverJogador(jogador, time);
+        renderizar();
+      };
+    } else {
+      lista.onclick = () => {
+        if (jogadorSelecionado) {
+          moverJogador(jogadorSelecionado, time);
+          renderizar();
+        }
+      };
+    }
 
     (time.status === "jogando" ? jogando : proxima)
       .appendChild(card);
@@ -99,49 +132,23 @@ function renderizar() {
     sobrando.appendChild(criarJogador(j))
   );
 
-  ativarDropzones();
-  salvar();
-}
-
-function ativarDropzones() {
-  document.querySelectorAll(".dropzone").forEach(zone => {
-    zone.ondragover = e => e.preventDefault();
-
-    zone.ondrop = e => {
+  if (!isMobile) {
+    sobrando.ondragover = e => e.preventDefault();
+    sobrando.ondrop = e => {
       const jogador = e.dataTransfer.getData("jogador");
-      const timeNome = zone.dataset.time;
-
-      if (jogador) {
-        estado.sobrando = estado.sobrando.filter(j => j !== jogador);
-
-        estado.times.forEach(t => {
-          t.jogadores = t.jogadores.filter(j => j !== jogador);
-        });
-
-        if (timeNome) {
-          const time = estado.times.find(t => t.nome === timeNome);
-          if (time && time.jogadores.length < 5) {
-            time.jogadores.push(jogador);
-          } else {
-            estado.sobrando.push(jogador);
-          }
-        } else {
-          estado.sobrando.push(jogador);
-        }
-
+      moverJogador(jogador, null);
+      renderizar();
+    };
+  } else {
+    sobrando.onclick = () => {
+      if (jogadorSelecionado) {
+        moverJogador(jogadorSelecionado, null);
         renderizar();
       }
-
-      const timeArrastado = e.dataTransfer.getData("time");
-      if (timeArrastado) {
-        const time = estado.times.find(t => t.nome === timeArrastado);
-        if (time) {
-          time.status = zone.id === "jogando" ? "jogando" : "proxima";
-          renderizar();
-        }
-      }
     };
-  });
+  }
+
+  salvar();
 }
 
 renderizar();
